@@ -376,9 +376,14 @@ for entry in all_entries:
 
 annotated_overlay_img.save(OUTPUT_DIR / f"{image_stem}_layer_overlay_annotated.png")
 
-# json metadata and such for next steps
+# save final per-layer masks and json metadata
 serializable_entries = []
 for entry in all_entries:
+    mask_rel = f"out_masks/{image_stem}_layer_{entry['layer_id']:02d}_{entry['name'].replace(' ', '_')}.png"
+    save_mask(entry["mask"], OUTPUT_DIR / mask_rel)
+
+    bbox = mask_bbox(entry["mask"])
+
     serializable_entries.append({
         "name": entry["name"],
         "source": entry["source"],
@@ -387,6 +392,8 @@ for entry in all_entries:
         "sort_key": entry["sort_key"],
         "layer_id": entry["layer_id"],
         "pixel_count": int(entry["mask"].sum()),
+        "mask_file": mask_rel,
+        "bbox": bbox,
     })
 
 with open(OUTPUT_DIR / f"{image_stem}_layers.json", "w", encoding="utf-8") as f:

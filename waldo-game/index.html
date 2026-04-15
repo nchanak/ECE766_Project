@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Where's Waldo</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>Where's Waldo</h1>
+      <p class="subtitle">Click where you think Waldo is</p>
+    </header>
+
+    <div class="toolbar">
+      <div class="stat">
+        <span class="stat-label">Time</span>
+        <span id="timer" class="stat-value">0.0s</span>
+      </div>
+      <div class="stat result-line" id="resultLine" hidden>
+        <span class="stat-label">Result</span>
+        <span id="resultText" class="stat-value success"></span>
+      </div>
+      <label class="toggle" id="levelPickWrap" hidden>
+        <span class="stat-label">Level</span>
+        <select id="levelPick" class="select"></select>
+      </label>
+      <button type="button" class="btn btn-start" id="btnStartGame">Start game</button>
+      <label class="toggle">
+        <input type="checkbox" id="showAnswer" />
+        <span>Show answer</span>
+      </label>
+      <button type="button" class="btn" id="btnNewRound" title="New round (demo level redraws the scene)">New round</button>
+    </div>
+
+    <div class="stage-wrap">
+      <div class="stage" id="stage">
+        <img id="levelImage" alt="Game scene" hidden />
+        <canvas id="levelCanvas" width="900" height="600"></canvas>
+        <div class="hit-layer" id="hitLayer" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="levels.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

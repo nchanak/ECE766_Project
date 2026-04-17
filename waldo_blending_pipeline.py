@@ -263,6 +263,52 @@ def create_mask_visualizations(background, full_mask):
     return mask_vis, overlay_vis
 
 
+def blend_waldo_into_scene(
+    background_rgb: np.ndarray,
+    waldo_rgba: np.ndarray,
+    x: int,
+    y: int,
+    *,
+    apply_color_match: bool = True,
+    apply_sharpness_match: bool = True,
+    add_noise: bool = True,
+    feather: bool = True,
+    feather_ksize: int = 5,
+):
+    """
+    Blend a pre-scaled Waldo RGBA cutout into a scene array.
+
+    Returns a dict with the composited scene and intermediate masks that can be
+    combined with scene-layer occlusion logic.
+    """
+    if background_rgb.ndim != 3 or background_rgb.shape[2] != 3:
+        raise ValueError("background_rgb must be an RGB image array.")
+    if waldo_rgba.ndim != 3 or waldo_rgba.shape[2] != 4:
+        raise ValueError("waldo_rgba must be an RGBA image array.")
+
+    background_bgr = cv2.cvtColor(background_rgb, cv2.COLOR_RGB2BGR)
+    waldo_bgra = cv2.cvtColor(waldo_rgba, cv2.COLOR_RGBA2BGRA)
+    waldo_rgb = waldo_bgra[:, :, :3]
+    waldo_alpha = waldo_bgra[:, :, 3]
+
+    if apply_color_match:
+        waldo_rgb = match_color_local(waldo_rgb, background_bgr, x, y)
+    if apply_sharpness_match:
+        waldo_rgb = match_sharpness_and_noise(waldo_rgb, background_bgr, x, y, add_noise=add_noise)
+
+    blend_alpha = feather_mask(waldo_alpha.copy(), blur_ksize=feather_ksize) if feather else waldo_alpha.copy()
+    composited_bgr = alpha_blend(background_bgr, waldo_rgb, blend_alpha, x, y)
+
+    return {
+        "background_bgr": background_bgr,
+        "waldo_rgb_bgr": waldo_rgb,
+        "waldo_alpha": waldo_alpha,
+        "blend_alpha": blend_alpha,
+        "composited_rgb": cv2.cvtColor(composited_bgr, cv2.COLOR_BGR2RGB),
+        "waldo_rgb": cv2.cvtColor(waldo_rgb, cv2.COLOR_BGR2RGB),
+    }
+
+
 # =========================================================
 # Pipeline
 # =========================================================

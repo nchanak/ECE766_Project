@@ -13,6 +13,9 @@
   const btnStartGame = document.getElementById("btnStartGame");
   const levelPick = document.getElementById("levelPick");
   const levelPickWrap = document.getElementById("levelPickWrap");
+  const imageUpload = document.getElementById("imageUpload");
+  const btnGenerateRound = document.getElementById("btnGenerateRound");
+  const generatorStatus = document.getElementById("generatorStatus");
 
   const levels = window.WALDO_LEVELS || [];
   let levelIndex = 0;
@@ -22,6 +25,7 @@
   let timerStart = 0;
   let rafId = 0;
   let wrongTimeout = 0;
+  let generating = false;
 
   const audioCtx = typeof AudioContext !== "undefined" ? new AudioContext() : null;
 
@@ -60,6 +64,21 @@
     resumeAudio();
     beep(120, 0.25, "sawtooth", 0.08);
     setTimeout(() => beep(90, 0.2, "sawtooth", 0.06), 120);
+  }
+
+  function setGeneratorStatus(message, tone = "") {
+    if (!generatorStatus) return;
+    generatorStatus.textContent = message;
+    generatorStatus.classList.remove("error", "success");
+    if (tone) {
+      generatorStatus.classList.add(tone);
+    }
+  }
+
+  function setGenerating(nextGenerating) {
+    generating = nextGenerating;
+    if (btnGenerateRound) btnGenerateRound.disabled = nextGenerating;
+    if (imageUpload) imageUpload.disabled = nextGenerating;
   }
 
   function formatSeconds(ms) {
@@ -391,6 +410,45 @@
     levelPickWrap.hidden = levels.length <= 1;
   }
 
+  function addGeneratedLevel(level) {
+    levels.push(level);
+    levelIndex = levels.length - 1;
+    fillLevelSelect();
+    if (levelPick) levelPick.value = String(levelIndex);
+  }
+
+  async function generateRoundFromUpload() {
+    if (generating) return;
+    if (!imageUpload || !imageUpload.files || !imageUpload.files[0]) {
+      setGeneratorStatus("Choose an image first.", "error");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", imageUpload.files[0]);
+
+    setGenerating(true);
+    setGeneratorStatus("Generating round... this can take a while.", "");
+
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || "Generation failed.");
+      }
+      addGeneratedLevel(data.level);
+      setGeneratorStatus("Round generated. Starting the new level.", "success");
+      await startLevel();
+    } catch (err) {
+      setGeneratorStatus("Generation failed: " + (err && err.message ? err.message : String(err)), "error");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   async function startLevel() {
     if (!levels.length) {
       hideLevelImage();
@@ -482,6 +540,13 @@
       resultLine.hidden = true;
       resultText.classList.remove("error", "success");
       startLevel();
+    });
+  }
+
+  if (btnGenerateRound) {
+    btnGenerateRound.addEventListener("click", () => {
+      resumeAudio();
+      generateRoundFromUpload();
     });
   }
 

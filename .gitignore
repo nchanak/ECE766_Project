@@ -6,3 +6,5 @@ output/
 *.egg-info/
 .DS_Store
 layered_output/
+generated_rounds/
+uploaded_images/

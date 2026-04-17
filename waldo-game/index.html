@@ -34,6 +34,18 @@
       <button type="button" class="btn" id="btnNewRound" title="New round (demo level redraws the scene)">New round</button>
     </div>
 
+    <div class="generator-panel">
+      <div class="generator-copy">
+        <h2>Generate a Round</h2>
+        <p>Upload an image and the local Python backend will build a new playable Where's Waldo scene.</p>
+      </div>
+      <div class="generator-controls">
+        <input type="file" id="imageUpload" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" />
+        <button type="button" class="btn" id="btnGenerateRound">Generate round</button>
+      </div>
+      <p class="generator-status" id="generatorStatus">Backend idle.</p>
+    </div>
+
     <div class="stage-wrap">
       <div class="stage" id="stage">
         <img id="levelImage" alt="Game scene" hidden />

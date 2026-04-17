@@ -82,11 +82,11 @@ def make_canny_control_image(
 class StylizeConfig:
     prompt: str = DEFAULT_PROMPT
     negative_prompt: str = DEFAULT_NEGATIVE
-    num_inference_steps: int = 30
-    strength: float = 0.55
-    guidance_scale: float = 7.5
-    controlnet_conditioning_scale: float = 0.85
-    max_long_edge: int = 640
+    num_inference_steps: int = 24
+    strength: float = 0.85
+    guidance_scale: float = 3.0
+    controlnet_conditioning_scale: float = 1.1
+    max_long_edge: int = 896
     canny_low: int = 100
     canny_high: int = 200
     seed: Optional[int] = None

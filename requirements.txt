@@ -11,3 +11,7 @@ huggingface_hub>=0.20.0
 Pillow>=10.0.0
 opencv-python-headless>=4.8.0
 numpy>=1.24.0
+# Pipeline C: SoftEdge control maps (PidiNet / Annotators)
+controlnet_aux>=0.0.7
+# Pipeline D: YOLO person detection
+ultralytics>=8.0.0

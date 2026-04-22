@@ -32,6 +32,22 @@
         <span>Show answer</span>
       </label>
       <button type="button" class="btn" id="btnNewRound" title="New round (demo level redraws the scene)">New round</button>
+      <input
+        type="file"
+        id="photo-upload"
+        class="sr-only"
+        accept="image/*"
+        aria-label="Choose image to upload"
+      />
+      <button type="button" class="btn btn-generate" id="generate-btn">Generate</button>
+    </div>
+
+    <div class="upload-extras">
+      <span id="upload-file-name" class="upload-file-name"></span>
+      <div id="upload-preview-wrap" class="upload-preview-wrap" hidden>
+        <img id="upload-preview-img" class="upload-preview-img" alt="" />
+      </div>
+      <p id="upload-status" class="upload-status" role="status"></p>
     </div>
 
     <div class="stage-wrap">
@@ -45,5 +61,6 @@
 
   <script src="levels.js"></script>
   <script src="game.js"></script>
+  <script src="upload.js"></script>
 </body>
 </html>

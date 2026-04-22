@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Approach &amp; Discussion | WaldoGen</title>
+  <link rel="icon" type="image/png" href="assets/tab.png?v=2" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="logo" href="index.html">Where's Waldo Project</a>
+      <nav aria-label="Main">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="motivation.html">Motivation</a></li>
+          <li><a href="approach.html" class="active">Approach &amp; Discussion</a></li>
+          <li><a href="conclusion.html">Conclusion &amp; Future Work</a></li>
+          <li><a href="presentation.html">Presentation</a></li>
+          <li><a href="reports.html">Reports</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-approach">
+    <h1 class="page-title">Approach &amp; Discussion</h1>
+
+    <div class="page-approach__layout">
+      <div class="page-approach__body">
+        <div id="pipeline-overview" class="pipeline-overview">
+          <h2 class="pipeline-overview-title">Method overview</h2>
+
+          <div
+            class="pipeline-grid"
+            role="img"
+            aria-label="Pipeline from input through segmentation, placement, stylization, and blending, to output."
+          >
+            <span class="pipe-node pipe-node--io pipe-node--a" data-pipe-idx="1" title="Input">
+              <span class="pipe-node-label">Input image</span>
+            </span>
+            <a class="pipe-node pipe-node--b" data-pipe-idx="2" href="#section-segmentation">
+              <span class="pipe-node-label">Segmentation</span>
+            </a>
+            <a class="pipe-node pipe-node--c" data-pipe-idx="3" href="#section-placement">
+              <span class="pipe-node-label">Placement</span>
+            </a>
+            <a class="pipe-node pipe-node--d" data-pipe-idx="4" href="#section-stylization">
+              <span class="pipe-node-label">Stylization</span>
+            </a>
+            <a class="pipe-node pipe-node--e" data-pipe-idx="5" href="#section-blending">
+              <span class="pipe-node-label">Blending</span>
+            </a>
+            <span class="pipe-node pipe-node--io pipe-node--f" data-pipe-idx="6" title="Output">
+              <span class="pipe-node-label">Output</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="approach-sections">
+          <section id="section-segmentation" class="ar-section" tabindex="-1">
+            <h2>Segmentation</h2>
+            <p class="section-placeholder">to be filled in.</p>
+            <div class="stage-gallery">
+              <figure><img src="assets/segmentation/landscape_layer_overlay_annotated.png" alt="Segmentation overlay (annotated)" loading="lazy" /></figure>
+              <figure><img src="assets/segmentation/landscape_layer_color.png" alt="Layer color map" loading="lazy" /></figure>
+            </div>
+            <div class="section-spacer" aria-hidden="true"></div>
+          </section>
+
+          <section id="section-placement" class="ar-section" tabindex="-1">
+            <h2>Placement</h2>
+            <p class="section-placeholder">to be filled in.</p>
+            <div class="stage-gallery stage-gallery-single">
+              <figure><img src="assets/placement/landscape_waldo_candidates_debug.png" alt="Placement candidate debug" loading="lazy" /></figure>
+            </div>
+            <div class="section-spacer" aria-hidden="true"></div>
+          </section>
+
+          <section id="section-stylization" class="ar-section" tabindex="-1">
+            <h2>Stylization</h2>
+            <p class="section-placeholder">to be filled in.</p>
+            <div class="stage-gallery stage-gallery-triple">
+              <figure><img src="assets/stylization/pipeline_a.png" alt="Stylization variant A" loading="lazy" /></figure>
+              <figure><img src="assets/stylization/pipeline_b.png" alt="Stylization variant B" loading="lazy" /></figure>
+              <figure><img src="assets/stylization/pipeline_c.png" alt="Stylization variant C" loading="lazy" /></figure>
+            </div>
+            <div class="section-spacer" aria-hidden="true"></div>
+          </section>
+
+          <section id="section-blending" class="ar-section" tabindex="-1">
+            <h2>Blending</h2>
+            <p class="section-placeholder">to be filled in.</p>
+            <div class="stage-gallery stage-gallery-single">
+              <figure><img src="assets/blending/landscape_pipeline_final.png" alt="Final blended output" loading="lazy" /></figure>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <aside class="pipeline-outline" id="pipeline-outline" aria-label="On this page">
+        <p class="pipeline-outline-title">On this page</p>
+        <ul class="pipeline-outline-list">
+          <li><a href="#pipeline-overview" data-section="pipeline-overview">Method overview</a></li>
+          <li><a href="#section-segmentation" data-section="section-segmentation">Segmentation</a></li>
+          <li><a href="#section-placement" data-section="section-placement">Placement</a></li>
+          <li><a href="#section-stylization" data-section="section-stylization">Stylization</a></li>
+          <li><a href="#section-blending" data-section="section-blending">Blending</a></li>
+        </ul>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p><strong>WaldoGen</strong> · CS 766 Computer Vision (Spring 2026)</p>
+  </footer>
+
+  <script src="js/pipeline-outline.js" defer></script>
+</body>
+</html>

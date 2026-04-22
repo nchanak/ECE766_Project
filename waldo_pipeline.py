@@ -8,7 +8,7 @@ from PIL import Image
 
 from dino_sam_semantic_depth import analyze_scene
 from place_waldo import choose_waldo_placement
-from stylize.pipeline_a import StylizeConfig, WaldoStylizerPipelineA
+from stylize.pipeline_c import StylizeConfigC, WaldoStylizerPipelineC
 from waldo_blending_pipeline import blend_waldo_into_scene
 from waldo_blending_pipeline import match_color_local
 
@@ -141,12 +141,12 @@ def extract_stylized_waldo_from_crop(
 
 
 def stylize_local_waldo_crop(
-    stylizer: WaldoStylizerPipelineA,
+    stylizer: WaldoStylizerPipelineC,
     background_rgb: np.ndarray,
     waldo_rgba: np.ndarray,
     x: int,
     y: int,
-    config: StylizeConfig | None,
+    config: StylizeConfigC | None,
     *,
     crop_pad_scale: float,
 ) -> dict[str, Any]:
@@ -192,9 +192,9 @@ def save_image(image: Image.Image | np.ndarray, path: Path) -> None:
 
 
 def maybe_stylize_image(
-    stylizer: WaldoStylizerPipelineA | None,
+    stylizer: WaldoStylizerPipelineC | None,
     image: Image.Image,
-    config: StylizeConfig | None,
+    config: StylizeConfigC | None,
     target_size: tuple[int, int],
 ) -> Image.Image:
     if stylizer is None:
@@ -215,7 +215,7 @@ def run_waldo_pipeline(
     placement_seed: int = 34,
     stylize: bool = True,
     stylize_ckpt: str | Path | None = None,
-    stylize_config: StylizeConfig | None = None,
+    stylize_config: StylizeConfigC | None = None,
     apply_color_match: bool = True,
     apply_sharpness_match: bool = True,
     add_noise: bool = True,
@@ -249,7 +249,7 @@ def run_waldo_pipeline(
     base_scene = placement_result["scene_image"].convert("RGB")
     stylizer = None
     if stylize and pipeline_order != "place_blend":
-        stylizer = WaldoStylizerPipelineA(ckpt_path=stylize_ckpt)
+        stylizer = WaldoStylizerPipelineC(ckpt_path=stylize_ckpt)
 
     if pipeline_order in {"stylize_place_blend", "stylize_bg_place_local_waldo", "stylize_bg_place_raw_waldo"}:
         working_scene = maybe_stylize_image(stylizer, base_scene, stylize_config, scene_size)
@@ -435,18 +435,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--feather-ksize", type=int, default=5, help="Feather kernel size for alpha blending")
     parser.add_argument("--local-waldo-crop-pad-scale", type=float, default=2.0, help="Padding multiplier around Waldo for local crop stylization")
     parser.add_argument("--raw-waldo-color-match-strength", type=float, default=0.75, help="Blend factor for light color matching when placing raw Waldo after background stylization")
-    parser.add_argument("--strength", type=float, default=0.85, help="Stylizer img2img strength")
-    parser.add_argument("--control-scale", type=float, default=0.85, help="ControlNet conditioning scale")
-    parser.add_argument("--steps", type=int, default=24, help="Stylizer inference steps")
-    parser.add_argument("--guidance", type=float, default=3.0, help="Stylizer guidance scale")
-    parser.add_argument("--max-long", type=int, default=896, help="Stylizer max long edge")
+    parser.add_argument(
+        "--strength",
+        type=float,
+        default=0.28,
+        help="Stylizer img2img strength (Pipeline C global pass ~0.25–0.30)",
+    )
+    parser.add_argument(
+        "--control-scale",
+        type=float,
+        default=0.40,
+        help="ControlNet conditioning scale (Pipeline C global ~0.35–0.45)",
+    )
+    parser.add_argument("--steps", type=int, default=30, help="Stylizer inference steps")
+    parser.add_argument("--guidance", type=float, default=7.5, help="Stylizer CFG / guidance scale")
+    parser.add_argument("--max-long", type=int, default=1280, help="Stylizer max long edge (pixels)")
     parser.add_argument("--seed-style", type=int, default=None, help="Optional stylizer seed")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    stylize_config = StylizeConfig(
+    stylize_config = StylizeConfigC(
         num_inference_steps=args.steps,
         strength=args.strength,
         guidance_scale=args.guidance,

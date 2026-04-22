@@ -1,5 +1,4 @@
-# Pipeline: ControlNet + Img2Img + Where's Waldo (merged checkpoint)
-# Python 3.10+ recommended. GPU strongly recommended (CUDA / Apple MPS).
+# Pipeline: ControlNet + Img2Img + Where's Waldo merged checkpoint
 
 torch>=2.0.0
 torchvision>=0.15.0
@@ -11,6 +10,10 @@ huggingface_hub>=0.20.0
 Pillow>=10.0.0
 opencv-python-headless>=4.8.0
 numpy>=1.24.0
+# Pipeline C: SoftEdge control maps (PidiNet / Annotators)
+controlnet_aux>=0.0.7
+# Optional: YOLO person detection (other pipeline stages)
+ultralytics>=8.0.0
 fastapi>=0.115.0
 uvicorn>=0.30.0
 python-multipart>=0.0.9

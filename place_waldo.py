@@ -290,16 +290,47 @@ def choose_waldo_placement(
     num_position_samples: int = NUM_POSITION_SAMPLES,
     top_k_random: int = TOP_K_RANDOM,
     save_debug: bool = True,
+    placement_style: str = "balanced",
+    mask_stem: str | None = None,
+    write_to_dir: str | Path | None = None,
 ) -> dict[str, Any]:
+    """
+    placement_style:
+      - "balanced" — original scoring (mild “Where’s Waldo” bias toward ~60% area occlusion).
+      - "findable" — cap occlusion, strongly prefer a visible head; good when defaults hide Waldo too much.
+      - "subtle_puzzle" — between the two: a bit of hide-and-seek without heavy occlusion.
+    """
+    if placement_style == "findable":
+        min_occluded = 0.0
+        max_occluded = 0.42
+        min_head = 0.90
+        occ_term_weight = 1.15
+        head_loss_weight = 2.2
+    elif placement_style == "subtle_puzzle":
+        min_occluded = 0.12
+        max_occluded = 0.58
+        min_head = 0.78
+        occ_term_weight = 1.25
+        head_loss_weight = 1.85
+    else:
+        min_occluded = MIN_OCCLUDED_FRAC
+        max_occluded = MAX_OCCLUDED_FRAC
+        min_head = MIN_HEAD_VISIBLE_FRAC
+        occ_term_weight = 1.35
+        head_loss_weight = 1.8
+
     random.seed(seed)
     np.random.seed(seed)
 
     image_path = Path(image_path)
     waldo_path = Path(waldo_path)
     output_dir = Path(output_dir)
-    stem = image_path.stem
+    write_dir = Path(write_to_dir) if write_to_dir is not None else output_dir
+    write_dir.mkdir(parents=True, exist_ok=True)
+    out_stem = image_path.stem
+    data_stem = mask_stem if mask_stem is not None else out_stem
 
-    with open(output_dir / f"{stem}_layers.json", "r", encoding="utf-8") as f:
+    with open(output_dir / f"{data_stem}_layers.json", "r", encoding="utf-8") as f:
         meta = json.load(f)
 
     target_w, target_h = meta["image_size"]
@@ -310,9 +341,11 @@ def choose_waldo_placement(
     scene_np = np.array(scene_img)
     h, w = scene_np.shape[:2]
 
-    layer_map = np.array(Image.open(output_dir / f"{stem}_layer_map.png").convert("L"))
-    depth_map_u8 = np.array(Image.open(output_dir / f"{stem}_depth_map.png").convert("L"))
-    support_mask, used_preferred_support = compute_support_mask(layer_entries, output_dir, h, w, stem)
+    layer_map = np.array(Image.open(output_dir / f"{data_stem}_layer_map.png").convert("L"))
+    depth_map_u8 = np.array(Image.open(output_dir / f"{data_stem}_depth_map.png").convert("L"))
+    support_mask, used_preferred_support = compute_support_mask(
+        layer_entries, output_dir, h, w, data_stem
+    )
     candidates = sample_candidate_points(support_mask, num_position_samples)
     if not candidates:
         raise RuntimeError("No valid candidate support pixels found for Waldo placement.")
@@ -355,22 +388,28 @@ def choose_waldo_placement(
 
             occ_mask = build_front_occlusion_mask(waldo_scene_mask, waldo_layer_id, layer_entries, output_dir)
             occ_frac = occ_mask.sum() / total
-            if occ_frac > MAX_OCCLUDED_FRAC:
+            if occ_frac > max_occluded:
                 continue
 
             head_mask_local = build_head_mask(alpha_variant)
             head_mask_scene = place_local_mask_on_scene(head_mask_local, h, w, place_x, place_y)
             head_visible_frac = compute_visible_fraction(head_mask_scene, occ_mask)
-            occ_penalty = abs(occ_frac - 1.0) if occ_frac < MIN_OCCLUDED_FRAC else 0.0
-            head_penalty = max(0.0, MIN_HEAD_VISIBLE_FRAC - head_visible_frac)
+            occ_penalty = abs(occ_frac - 1.0) if occ_frac < min_occluded else 0.0
+            head_penalty = max(0.0, min_head - head_visible_frac)
             rotation_penalty = ROTATION_TIEBREAK_WEIGHT * min(abs(angle_degrees), abs(abs(angle_degrees) - 180))
+            if placement_style == "findable":
+                occ_term = (1.0 - occ_frac) * occ_term_weight
+            elif placement_style == "subtle_puzzle":
+                occ_term = occ_term_weight * (1.0 - abs(occ_frac - 0.45))
+            else:
+                occ_term = occ_term_weight * (1.0 - abs(occ_frac - 0.6))
             score = (
                 0.3 * y_score
-                + 1.35 * (1.0 - abs(occ_frac - 0.6))
+                + occ_term
                 + 0.3 * (1.0 - depth_score)
                 + TEXTURE_SCORE_WEIGHT * texture_score
                 - 1.45 * occ_penalty
-                - 1.8 * head_penalty
+                - head_loss_weight * head_penalty
                 - rotation_penalty
             )
             variant_results.append({
@@ -389,14 +428,28 @@ def choose_waldo_placement(
         if not variant_results:
             continue
 
-        chosen_variant = max(
-            variant_results,
-            key=lambda item: (
-                item["head_visible_fraction"] >= MIN_HEAD_VISIBLE_FRAC,
+        def _variant_key(item: dict) -> tuple:
+            if placement_style == "findable":
+                return (
+                    item["head_visible_fraction"] >= min_head,
+                    item["head_visible_fraction"],
+                    -item["occluded_fraction"],
+                    item["score"],
+                )
+            if placement_style == "subtle_puzzle":
+                return (
+                    item["head_visible_fraction"] >= min_head,
+                    -item["occluded_fraction"],
+                    item["head_visible_fraction"],
+                    item["score"],
+                )
+            return (
+                item["head_visible_fraction"] >= min_head,
                 item["head_visible_fraction"],
                 item["score"],
-            ),
-        )
+            )
+
+        chosen_variant = max(variant_results, key=_variant_key)
 
         valid_candidates.append({
             "foot_x": int(foot_x),
@@ -444,6 +497,7 @@ def choose_waldo_placement(
         "head_visible_fraction": best["head_visible_fraction"],
         "texture_score": best["texture_score"],
         "score": best["score"],
+        "placement_style": placement_style,
     }
 
     if save_debug:
@@ -458,17 +512,21 @@ def choose_waldo_placement(
         fy, fx = best["foot_y"], best["foot_x"]
         radius = 5
         debug[max(0, fy - radius):min(h, fy + radius + 1), max(0, fx - radius):min(w, fx + radius + 1), :3] = [255, 0, 0]
-        Image.fromarray(debug).save(output_dir / f"{stem}_waldo_candidates_debug.png")
+        Image.fromarray(debug).save(write_dir / f"{out_stem}_waldo_candidates_debug.png")
 
-    Image.fromarray(composed).save(output_dir / f"{stem}_waldo_composited.png")
+    Image.fromarray(composed).save(write_dir / f"{out_stem}_waldo_composited.png")
 
     serializable = dict(placement)
-    serializable["occ_mask_file"] = f"{stem}_waldo_occ_mask.png"
-    serializable["waldo_mask_file"] = f"{stem}_waldo_mask.png"
-    Image.fromarray(best["occ_mask"].astype(np.uint8) * 255).save(output_dir / serializable["occ_mask_file"])
-    Image.fromarray(best["waldo_scene_mask"].astype(np.uint8) * 255).save(output_dir / serializable["waldo_mask_file"])
+    serializable["occ_mask_file"] = f"{out_stem}_waldo_occ_mask.png"
+    serializable["waldo_mask_file"] = f"{out_stem}_waldo_mask.png"
+    Image.fromarray(best["occ_mask"].astype(np.uint8) * 255).save(
+        write_dir / serializable["occ_mask_file"]
+    )
+    Image.fromarray(best["waldo_scene_mask"].astype(np.uint8) * 255).save(
+        write_dir / serializable["waldo_mask_file"]
+    )
 
-    with open(output_dir / f"{stem}_waldo_placement.json", "w", encoding="utf-8") as f:
+    with open(write_dir / f"{out_stem}_waldo_placement.json", "w", encoding="utf-8") as f:
         json.dump(serializable, f, indent=2)
 
     return {
@@ -489,6 +547,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--waldo", default="waldo.png", help="Path to Waldo image with alpha")
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR), help="Directory containing scene analysis outputs")
     parser.add_argument("--seed", type=int, default=SEED, help="Random seed")
+    parser.add_argument(
+        "--placement-style",
+        choices=("balanced", "findable", "subtle_puzzle"),
+        default="balanced",
+        help="findable: less occlusion, easier to see Waldo. subtle_puzzle: light hide-and-seek.",
+    )
     return parser.parse_args()
 
 
@@ -499,6 +563,7 @@ def main() -> None:
         waldo_path=args.waldo,
         output_dir=args.output_dir,
         seed=args.seed,
+        placement_style=args.placement_style,
     )
     print("Placement:")
     print(json.dumps(result["placement"], indent=2))

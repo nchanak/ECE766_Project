@@ -61,7 +61,24 @@
         <div class="approach-sections">
           <section id="section-segmentation" class="ar-section" tabindex="-1">
             <h2>Segmentation</h2>
-            <p class="section-placeholder">to be filled in.</p>
+            <p>
+              Our scene's are analyzed as a layered segmentation pipeline. First, the input image is resized to a
+              manageable size and passed through GroundingDINO using a text prompt of object categories that are useful
+              for hiding Waldo, such as buildings, trees, cars, poles,signs, and people. The prompt is kept small
+              focusing on common objects to save on compute time. GroundingDINO returns
+              bounding boxes for these  detections. The boxes are then used as prompts
+              for SAM, which converts each detection into a binary mask.
+            </p>
+            <p>
+              The masks from GroundingDINO/SAM alone do not cover large scene regions such as sky, ground, mountains, and roads.
+              sS the pipeline also runs SegFormer-B5 trained on ADE20K. The semantic segmentation output is filtered by a
+              fixed set of class queries similar to GroundingDINO, producing broad region masks for the rest of the scene. Any
+              semantic pixels already claimed by SAM instance masks are removed so that the final masks do not overlap, letting SAM masks have
+              priority.
+              Finally, Depth Anything V2 estimates a monocular depth map. Each mask is assigned the median depth of
+              its pixels, adjusted with class priors that push sky, mountains, buildings, and water toward background
+              layers. Sorting these masks by depth produces the layer map used later for placement and occlusion.
+            </p>
             <div class="stage-gallery">
               <figure><img src="assets/segmentation/landscape_layer_overlay_annotated.png" alt="Segmentation overlay (annotated)" loading="lazy" /></figure>
               <figure><img src="assets/segmentation/landscape_layer_color.png" alt="Layer color map" loading="lazy" /></figure>
@@ -71,7 +88,26 @@
 
           <section id="section-placement" class="ar-section" tabindex="-1">
             <h2>Placement</h2>
-            <p class="section-placeholder">to be filled in.</p>
+            <p>
+              Placement uses the segmentation outputs to choose a location for Waldo that is plausible and
+              findable. The algorithm first builds a support mask from preferred classes such as ground, road, cliff, building, and sign, 
+              while forbidding sky and water. It then
+              samples 1200 candidate foot positions from this region. For each candidate, the depth map
+              determines Waldo's scale. Farther regions place a smaller Waldo and nearer looking regions place a
+              larger one with appropriate bounds.
+            </p>
+            <p>
+              Candidates are tested with multiple Waldo rotations. The code checks Waldo's layer from the layer
+              map, builds an occlusion mask from objects in front of that layer, and rejects placements that hide too much of Waldo. 
+              A head visibility check prevents the most recognizable part of Waldo from being fully
+              obscured. Remaining candidates are scored using image position, depth, desired occlusion amount, local texture
+              complexity, head visibility, and a small rotation penalty. We prefer slightly lower image positions to avoid the sky,
+              noisy areas to increase difficulty, depth bounds for difficulty, and occlusion amounts for difficulty and feasibility. 
+              The best scoring group is randomized slightly by
+              selecting from the top candidates, which avoids similar type placements while keeping the result within a
+              desired difficulty range. The debug image shows sampled candidates in yellow, valid candidates in cyan, and the
+              selected placement in red.
+            </p>
             <div class="stage-gallery stage-gallery-single">
               <figure><img src="assets/placement/landscape_waldo_candidates_debug.png" alt="Placement candidate debug" loading="lazy" /></figure>
             </div>

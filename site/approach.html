@@ -127,7 +127,19 @@
 
           <section id="section-blending" class="ar-section" tabindex="-1">
             <h2>Blending</h2>
-            <p class="section-placeholder">to be filled in.</p>
+            <p class="section-placeholder">The blending stage aims to integrate Waldo into the target scene in a visually coherent manner
+              by adapting his appearance to the local image context and ensuring a seamless transition at object boundaries.
+              Starting from a predefined position and scale, Waldo is first resized and placed into the scene, and his alpha mask is 
+              extracted to define the visible region. To reduce visual inconsistencies, a local appearance adaptation step is applied: 
+              color and brightness are matched to the surrounding background patch by aligning per-channel statistics, followed by sharpness
+              and noise adjustments to ensure consistency in image quality and prevent Waldo from appearing overly crisp or artificially clean. 
+             After these adaptations, the final composition was evaluated using different blending techniques. We first experimented with alpha 
+              blending using a feathered mask, which can create smooth transitions at object boundaries, but in some scenes it made Waldo appear
+              too transparent and reduced his visual clarity. We also tested Poisson blending, a gradient-domain method that enforces consistency 
+              of intensity changes between the foreground and background. While Poisson blending can produce natural results for Waldo some of the time,
+              it often led to undesired outcomes in our setting, such as reduced contrast and partial loss of Waldo’s characteristic patterns. Due to this
+              variability, we ultimately chose a more straightforward and robust approach based on local color, brightness, sharpness, and noise adjustment,
+              followed by direct compositing. This preserves Waldo’s recognizability while still adapting his appearance to the surrounding scene.</p>
             <div class="stage-gallery stage-gallery-single">
               <figure><img src="assets/blending/landscape_pipeline_final.png" alt="Final blended output" loading="lazy" /></figure>
             </div>

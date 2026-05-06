@@ -13,11 +13,8 @@
   const btnStartGame = document.getElementById("btnStartGame");
   const levelPick = document.getElementById("levelPick");
   const levelPickWrap = document.getElementById("levelPickWrap");
-  const imageUpload = document.getElementById("imageUpload");
-  const btnGenerateRound = document.getElementById("btnGenerateRound");
-  const generatorStatus = document.getElementById("generatorStatus");
 
-  const levels = window.WALDO_LEVELS || [];
+  const levels = Array.prototype.slice.call(window.WALDO_LEVELS || [], 0);
   let levelIndex = 0;
   /** @type {typeof levels[0] & { waldo?: { x: number; y: number } }} */
   let current = null;
@@ -25,7 +22,6 @@
   let timerStart = 0;
   let rafId = 0;
   let wrongTimeout = 0;
-  let generating = false;
 
   const audioCtx = typeof AudioContext !== "undefined" ? new AudioContext() : null;
 
@@ -64,21 +60,6 @@
     resumeAudio();
     beep(120, 0.25, "sawtooth", 0.08);
     setTimeout(() => beep(90, 0.2, "sawtooth", 0.06), 120);
-  }
-
-  function setGeneratorStatus(message, tone = "") {
-    if (!generatorStatus) return;
-    generatorStatus.textContent = message;
-    generatorStatus.classList.remove("error", "success");
-    if (tone) {
-      generatorStatus.classList.add(tone);
-    }
-  }
-
-  function setGenerating(nextGenerating) {
-    generating = nextGenerating;
-    if (btnGenerateRound) btnGenerateRound.disabled = nextGenerating;
-    if (imageUpload) imageUpload.disabled = nextGenerating;
   }
 
   function formatSeconds(ms) {
@@ -410,45 +391,6 @@
     levelPickWrap.hidden = levels.length <= 1;
   }
 
-  function addGeneratedLevel(level) {
-    levels.push(level);
-    levelIndex = levels.length - 1;
-    fillLevelSelect();
-    if (levelPick) levelPick.value = String(levelIndex);
-  }
-
-  async function generateRoundFromUpload() {
-    if (generating) return;
-    if (!imageUpload || !imageUpload.files || !imageUpload.files[0]) {
-      setGeneratorStatus("Choose an image first.", "error");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("image", imageUpload.files[0]);
-
-    setGenerating(true);
-    setGeneratorStatus("Generating round... this can take a while.", "");
-
-    try {
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || "Generation failed.");
-      }
-      addGeneratedLevel(data.level);
-      setGeneratorStatus("Round generated. Starting the new level.", "success");
-      await startLevel();
-    } catch (err) {
-      setGeneratorStatus("Generation failed: " + (err && err.message ? err.message : String(err)), "error");
-    } finally {
-      setGenerating(false);
-    }
-  }
-
   async function startLevel() {
     if (!levels.length) {
       hideLevelImage();
@@ -543,12 +485,37 @@
     });
   }
 
-  if (btnGenerateRound) {
-    btnGenerateRound.addEventListener("click", () => {
-      resumeAudio();
-      generateRoundFromUpload();
+  /**
+   * @param {object} level
+   * @param {string} level.src - URL to scene image
+   * @param {{x:number,y:number}} level.waldo - normalized 0-1
+   * @param {number} [level.hitRadius]
+   * @param {string} [level.title]
+   * @param {string} [level.id]
+   */
+  window.waldoAddGeneratedLevel = function (level) {
+    if (!level || !level.src) {
+      console.error("waldoAddGeneratedLevel: need src");
+      return false;
+    }
+    if (!level.waldo || typeof level.waldo.x !== "number" || typeof level.waldo.y !== "number") {
+      console.error("waldoAddGeneratedLevel: need waldo: { x, y }");
+      return false;
+    }
+    levels.push({
+      id: level.id || "generated-" + Date.now(),
+      type: "image",
+      title: level.title || "Generated",
+      src: level.src,
+      waldo: { x: level.waldo.x, y: level.waldo.y },
+      hitRadius: typeof level.hitRadius === "number" ? level.hitRadius : 0.055,
     });
-  }
+    levelIndex = levels.length - 1;
+    fillLevelSelect();
+    if (levelPick) levelPick.value = String(levelIndex);
+    startLevel();
+    return true;
+  };
 
   fillLevelSelect();
   startLevel();

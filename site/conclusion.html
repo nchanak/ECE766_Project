@@ -28,12 +28,46 @@
     <h1 class="page-title">Conclusion &amp; Future Work</h1>
 
     <h2>Conclusion</h2>
-    <div class="placeholder-sub" aria-label="Conclusion to be added"></div>
-    <!-- TODO: add conclusion text -->
+    <p>
+      WaldoGen demonstrates a full computer vision pipeline for turning an ordinary image into a
+      Where's Waldo game. The implementation combines modern pretrained models with
+      rule based reasoning. Overall, the project creates these games by combining detection, segmentation, depth estimation, 
+      compositing, stylization and blending to create Where's Waldo scenes from arbitrary pictures. Our results showcase
+      the benefits and detriments to our approach. The pipeline itself is flexible due to each stage being built
+      separately with debug info generated along the way. The quality of the output depends a lot on how good the
+      pretrained models are as well as our heuristics. In edge case scenes with bad perspective, unusual objects, or
+      other outlier features Waldo may not be properly placed and hidden.
+    </p>
 
     <h2>Future work</h2>
-    <div class="placeholder-sub" aria-label="Future work to be added"></div>
-    <!-- TODO: add future work text -->
+    <p>
+      Future work could improve all aspects of the pipeline. Some ideas are:
+    </p>
+    <ul>
+      <li>
+        Replace heuristics for placement with a learned model trained on human preference.
+      </li>
+      <li>
+        Use stronger geometric reasoning for feet placement such as identifying 3D aspects of the scene like surfaces.
+      </li>
+      <li>
+        Improve occlusion by further leveraging depth mask to create more dynamic masks that don't depend on individual objects.
+      </li>
+      <li>
+        Insert more characters than just Waldo into the scene to create diversions and increase difficulty of the game while
+        maintaining feasibility.
+      </li>
+      <li>
+        Make a more consistent stylization model through fine tuning.
+      </li>
+      <li>
+        Have a backend hosted somewhere that runs the inference of the models so that the website can generate games instead 
+        of requiring users to download the code and run locally.
+      </li>
+      <li>
+        Add user controls for game difficulty, timing, etc.
+      </li>
+    </ul>
   </main>
 
   <footer class="site-footer">

@@ -879,7 +879,7 @@ a.pipe-node--f:hover {
 }
 
 .page-home .home-notes {
-  max-width: 42rem;
+  max-width: 100%;
   color: var(--text);
   font-size: 0.95rem;
   line-height: 1.6;
